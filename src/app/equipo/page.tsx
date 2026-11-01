@@ -38,6 +38,7 @@ export default function Equipo() {
   const [pPublicar, setPPublicar] = useState(false);
   const [pCostos, setPCostos] = useState(false);
   const [aviso, setAviso] = useState("");
+  const [pendienteDe, setPendienteDe] = useState("");
 
   const cargar = useCallback(async () => {
     const [eq, ev] = await Promise.all([
@@ -64,14 +65,40 @@ export default function Equipo() {
       setAviso(error.message);
       return;
     }
-    setAviso(
-      data === "vinculado"
-        ? "✓ Listo: ya tenía cuenta, quedó dentro del equipo."
-        : "✓ Invitación lista. Cuando se cree la cuenta con ese mail (en motostock o en Motocambio), entra solo."
-    );
+    if (data === "vinculado") {
+      setAviso("✓ Listo: ya tenía cuenta, quedó dentro del equipo.");
+      setPendienteDe("");
+    } else {
+      // Es nuevo: intentamos mandarle el mail (si está configurado) y
+      // le ofrecemos al dueño avisarle por WhatsApp, que nunca falla.
+      setPendienteDe(email);
+      try {
+        const r = await fetch("/api/invitar-mail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const res = await r.json();
+        setAviso(
+          res?.enviado
+            ? "✓ Invitación creada y mail enviado. Igual podés avisarle por WhatsApp:"
+            : "✓ Invitación creada. Todavía no tiene cuenta: avisale vos por WhatsApp 👇"
+        );
+      } catch {
+        setAviso("✓ Invitación creada. Avisale por WhatsApp 👇");
+      }
+    }
     setEmail("");
     setInvitando(false);
     cargar();
+  }
+
+  function avisarPorWhatsApp() {
+    const texto =
+      `¡Hola! Te sumé al equipo de ${ctx?.concesionario?.nombre || "nuestro concesionario"} ` +
+      `en MotoStock, nuestro gestor de stock. Creá tu cuenta acá: ${location.origin}/registro ` +
+      `— importante: usá este mail: ${pendienteDe}. Al entrar ya vas a estar adentro.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
   }
 
   async function cambiar(m: Miembro, campos: Partial<Miembro>) {
@@ -152,9 +179,15 @@ export default function Equipo() {
           </div>
 
           {aviso && (
-            <p className="mt-3 text-sm font-semibold text-azul bg-[#EAF1FA] border border-[#C9DCF2] rounded-xl px-4 py-2.5">
-              {aviso}
-            </p>
+            <div className="mt-3 bg-[#EAF1FA] border border-[#C9DCF2] rounded-xl px-4 py-3">
+              <p className="text-sm font-semibold text-azul">{aviso}</p>
+              {pendienteDe && (
+                <button onClick={avisarPorWhatsApp}
+                  className="mt-2 bg-[#17925F] hover:opacity-90 text-white font-titulos font-extrabold rounded-xl px-5 py-2.5 text-sm">
+                  📲 Avisarle por WhatsApp a {pendienteDe}
+                </button>
+              )}
+            </div>
           )}
 
           {invitando ? (

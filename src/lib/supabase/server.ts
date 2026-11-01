@@ -18,7 +18,7 @@ export async function crearClienteServidor() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Llamado desde un Server Component: el middleware refresca la sesión
+            // Los Server Components no pueden escribir cookies: no pasa nada.
           }
         },
       },
