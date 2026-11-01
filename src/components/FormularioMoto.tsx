@@ -46,6 +46,7 @@ export function FormularioMoto({ itemId }: { itemId?: string }) {
   const [origen, setOrigen] = useState<"propia" | "consignada">("propia");
   const [consigNombre, setConsigNombre] = useState("");
   const [consigTel, setConsigTel] = useState("");
+  const [fechaIngreso, setFechaIngreso] = useState(new Date().toISOString().slice(0, 10));
   const [dominio, setDominio] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [fotos, setFotos] = useState<string[]>([]);
@@ -83,6 +84,7 @@ export function FormularioMoto({ itemId }: { itemId?: string }) {
           setConsigNombre(it.consignatario_nombre || "");
           setConsigTel(it.consignatario_telefono || "");
           setDominio(it.dominio || "");
+          if (it.fecha_ingreso) setFechaIngreso(it.fecha_ingreso);
           setDescripcion(it.descripcion || "");
           setFotos(it.fotos || []);
         }
@@ -118,6 +120,7 @@ export function FormularioMoto({ itemId }: { itemId?: string }) {
       consignatario_telefono: origen === "consignada" ? consigTel || null : null,
       dominio: dominio.trim().toUpperCase() || null,
       descripcion: descripcion.trim() || null,
+      fecha_ingreso: fechaIngreso || new Date().toISOString().slice(0, 10),
     };
     // El costo viaja solo si el usuario puede tocarlo (si no, ni se manda)
     const conCosto = ctx.permisos?.costos && ctx.permisos?.precios
@@ -241,7 +244,7 @@ export function FormularioMoto({ itemId }: { itemId?: string }) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <label className="text-sm font-semibold">
               Año
               <input required inputMode="numeric" value={anio} onChange={(e) => setAnio(e.target.value)}
@@ -251,6 +254,14 @@ export function FormularioMoto({ itemId }: { itemId?: string }) {
               Kilómetros
               <input required inputMode="numeric" value={km} onChange={(e) => setKm(e.target.value)}
                 className="mt-1 w-full border-2 border-linea rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-azul" />
+            </label>
+            <label className="text-sm font-semibold">
+              🗓️ Ingresó al stock
+              <input type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)}
+                className="mt-1 w-full border-2 border-linea rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-azul bg-white" />
+              <span className="block text-xs text-gris font-normal mt-1">
+                Si la tenés hace tiempo, poné la fecha real: de acá salen los días en stock.
+              </span>
             </label>
           </div>
 

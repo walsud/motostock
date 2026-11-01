@@ -31,12 +31,15 @@ export default function Registro() {
       return;
     }
     setCargando(true);
+    // El mail de confirmación vuelve SIEMPRE al dominio oficial (nunca a
+    // la dirección interna de Vercel, que está protegida).
+    const base = process.env.NEXT_PUBLIC_APP_URL || "https://stock.motocambio.com.ar";
     const { data, error: err } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { nombre, provincia },
-        emailRedirectTo: `${location.origin}/login?confirmado=1`,
+        emailRedirectTo: `${base}/login?confirmado=1`,
       },
     });
     setCargando(false);

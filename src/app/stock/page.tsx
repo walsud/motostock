@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useContexto } from "@/lib/useContexto";
 import { Shell } from "@/components/Shell";
-import { precio, fechaCorta, type ItemStock } from "@/lib/tipos";
+import { precio, fechaCorta, diasEnStock, type ItemStock } from "@/lib/tipos";
 
 // La pantalla central: todo el stock, con sus dos precios, su estado
 // y el puente con Motocambio a un toque.
@@ -69,8 +69,11 @@ export default function Stock() {
       Moneda: i.moneda, "Precio contado": i.precio_contado, "Precio permuta": i.precio_permuta,
       ...(veCostos ? { "Costo de compra": i.costo_compra } : {}),
       Sucursal: i.sucursal || "", Origen: i.origen,
+      "Ingresó": i.fecha_ingreso || "",
+      "Días en stock": i.fecha_ingreso ? diasEnStock(i.fecha_ingreso, i.vendida_el) : "",
       Estado: i.estado, "En Motocambio": i.publicada ? "publicada" : "",
       "Venta: canal": i.venta_canal || "", "Venta: precio": i.venta_precio ?? "",
+      "Vendida el": i.vendida_el ? i.vendida_el.slice(0, 10) : "",
       Dominio: i.dominio || "",
     }));
     const hoja = XLSX.utils.json_to_sheet(filas);
@@ -205,6 +208,9 @@ export default function Stock() {
                 <p className="text-[12px] text-gris mt-0.5">
                   {Number(it.km).toLocaleString("es-AR")} km
                   {it.sucursal ? ` · ${it.sucursal}` : ""}
+                  {it.fecha_ingreso && it.estado !== "vendida"
+                    ? ` · 🗓️ en stock hace ${diasEnStock(it.fecha_ingreso)} día${diasEnStock(it.fecha_ingreso) === 1 ? "" : "s"}`
+                    : ""}
                   {it.actualizado_por_nombre ? ` · ${fechaCorta(it.actualizado_el)} por ${it.actualizado_por_nombre}` : ""}
                 </p>
                 <p className="text-[13px] mt-1">
@@ -218,6 +224,7 @@ export default function Stock() {
                   {it.estado === "vendida" ? (
                     <span className="text-[11px] font-bold rounded-full px-2.5 py-0.5 bg-[#EDF0F4] text-gris">
                       💰 Vendida · {it.venta_canal}{it.venta_precio ? ` · ${precio(it.venta_precio, it.venta_moneda)}` : ""} · {fechaCorta(it.vendida_el)}
+                      {it.fecha_ingreso ? ` · tardó ${diasEnStock(it.fecha_ingreso, it.vendida_el)} días` : ""}
                     </span>
                   ) : it.estado === "senada" ? (
                     <span className="text-[11px] font-bold rounded-full px-2.5 py-0.5 bg-[#EEE9F7] text-viol">

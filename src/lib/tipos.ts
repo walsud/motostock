@@ -59,6 +59,14 @@ export interface ItemStock {
   actualizado_el: string;
   actualizado_por_nombre: string | null;
   creado_el: string;
+  fecha_ingreso: string;
+}
+
+// Días entre la fecha de ingreso y otra fecha (o hoy)
+export function diasEnStock(ingreso: string, hasta?: string | null) {
+  const desde = new Date(ingreso + "T00:00:00");
+  const fin = hasta ? new Date(hasta) : new Date();
+  return Math.max(0, Math.round((fin.getTime() - desde.getTime()) / 86400000));
 }
 
 // "USD 7.300" / "$ 9.450.000"
