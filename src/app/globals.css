@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  /* Identidad MotoStock v1.0 — el gestor es azul; Motocambio es rojo */
+  --azul: #1e5aa8;
+  --azul-oscuro: #15406f;
+  --tinta: #17202b;
+  --tinta-2: #44505e;
+  --gris: #64707e;
+  --linea: #e2e6ec;
+  --fondo: #f2f4f7;
+  --verde-ok: #17925f;
+  --ambar: #b0700f;
+  --viol: #6b4fa3;
+  --rojo-mc: #c8102e;
+}
+
+@theme inline {
+  --color-azul: var(--azul);
+  --color-azul-oscuro: var(--azul-oscuro);
+  --color-tinta: var(--tinta);
+  --color-tinta2: var(--tinta-2);
+  --color-gris: var(--gris);
+  --color-linea: var(--linea);
+  --color-fondo: var(--fondo);
+  --color-verde-ok: var(--verde-ok);
+  --color-ambar: var(--ambar);
+  --color-viol: var(--viol);
+  --color-rojo-mc: var(--rojo-mc);
+  --font-titulos: "Archivo", "Trebuchet MS", Arial, sans-serif;
+  --font-texto: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+body {
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: "Archivo", "Trebuchet MS", Arial, sans-serif;
+}
+
+/* Ningún campo puede empujar el ancho de la página */
+input, select, textarea, label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* iPhone hace zoom pegajoso con campos menores a 16px */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+.recorte-horizontal {
+  overflow-x: clip;
+}
+
+/* La lista de precios se imprime limpia (Guardar como PDF) */
+@media print {
+  .no-imprimir { display: none !important; }
+  body { background: #fff; }
+}
