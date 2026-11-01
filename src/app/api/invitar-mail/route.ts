@@ -31,7 +31,9 @@ export async function POST(req: Request) {
   if (!claveResend) return NextResponse.json({ enviado: false, motivo: "sin RESEND_API_KEY" });
 
   const conc = contexto.concesionario.nombre;
-  const origen = new URL(req.url).origin;
+  // OJO: nada de deducir la dirección del pedido — en Vercel eso devuelve
+  // la URL interna del deployment (protegida) y el invitado rebota.
+  const origen = process.env.NEXT_PUBLIC_APP_URL || "https://stock.motocambio.com.ar";
 
   try {
     const resend = new Resend(claveResend);
