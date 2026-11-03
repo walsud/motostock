@@ -61,6 +61,16 @@ export default function Stock() {
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
   }
 
+  async function copiarLink(it: ItemStock) {
+    const link = `https://motocambio.com.ar/moto/${it.moto_id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      avisar("🔗 Link copiado — pegalo donde quieras: " + link);
+    } catch {
+      avisar("El link es: " + link);
+    }
+  }
+
   async function exportarExcel() {
     const XLSX = await import("xlsx");
     const veCostos = !!ctx?.permisos?.costos;
@@ -253,9 +263,14 @@ export default function Stock() {
                   </button>
                 )}
                 {it.estado === "disponible" && it.publicada && it.moto_id && (
-                  <button onClick={() => compartir(it)} className="text-[13px] font-bold text-verde-ok">
-                    📲 Compartir
-                  </button>
+                  <>
+                    <button onClick={() => compartir(it)} className="text-[13px] font-bold text-verde-ok">
+                      📲 Compartir
+                    </button>
+                    <button onClick={() => copiarLink(it)} className="text-[13px] font-bold text-azul">
+                      🔗 Copiar link
+                    </button>
+                  </>
                 )}
                 {puedeEditar && it.estado === "disponible" && (
                   <button disabled={ocupado === it.id} onClick={() => accion(it, "senar_stock_item")}
