@@ -16,6 +16,11 @@ export default function Stock() {
   const [vendiendo, setVendiendo] = useState<ItemStock | null>(null);
   const [ventaCanal, setVentaCanal] = useState("mostrador");
   const [ventaPrecio, setVentaPrecio] = useState("");
+  const [opItem, setOpItem] = useState<ItemStock | null>(null);
+  const [opPrecio, setOpPrecio] = useState("");
+  const [opMotivo, setOpMotivo] = useState("");
+  const [opRef, setOpRef] = useState<{ ref_min: number; ref_max: number } | null>(null);
+  const [opRefCargada, setOpRefCargada] = useState(false);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [aviso, setAviso] = useState("");
 
@@ -59,6 +64,50 @@ export default function Stock() {
     const link = `https://motocambio.com.ar/moto/${it.moto_id}`;
     const texto = `¡Mirá esta ${it.marca} ${it.modelo} ${it.anio}! ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+  }
+
+  // ---------- Oportunidades (venta de contado en Motocambio) ----------
+  async function abrirOportunidad(it: ItemStock) {
+    setOpItem(it);
+    setOpMotivo("");
+    setOpRef(null);
+    setOpRefCargada(false);
+    // Sugerencia de precio: tu contado, pasado a USD si está en pesos
+    const cot = ctx?.concesionario?.cotizacion_usd || 1500;
+    const sugerido = it.precio_contado
+      ? it.moneda === "USD" ? Math.round(Number(it.precio_contado)) : Math.round(Number(it.precio_contado) / cot)
+      : null;
+    setOpPrecio(sugerido ? String(sugerido) : "");
+    const { data } = await supabase
+      .from("referencias_precio")
+      .select("ref_min, ref_max")
+      .eq("modelo_id", it.modelo_id)
+      .eq("anio", it.anio)
+      .maybeSingle();
+    setOpRef((data as { ref_min: number; ref_max: number }) || null);
+    setOpRefCargada(true);
+  }
+
+  async function confirmarOportunidad(e: React.FormEvent) {
+    e.preventDefault();
+    if (!opItem || !opPrecio) return;
+    const it = opItem;
+    setOpItem(null);
+    const { error } = await supabase.rpc("oportunidad_desde_stock", {
+      p_item: it.id,
+      p_precio: Number(opPrecio.replace(/\./g, "")),
+      p_motivo: opMotivo.trim() || null,
+    });
+    if (error) {
+      avisar(error.message.includes("por debajo de la referencia")
+        ? error.message.replace(/^.*?Para/, "Para")
+        : error.message);
+    } else {
+      avisar(opRef
+        ? "🏷️ ¡Publicada en Oportunidades! Dura 14 días."
+        : "🏷️ Enviada. Este modelo no tiene referencia todavía: Motocambio la revisa y la aprueba a mano.");
+    }
+    await cargar();
   }
 
   async function copiarLink(it: ItemStock) {
@@ -249,6 +298,12 @@ export default function Stock() {
                       {it.fotos?.length ? "Sin publicar" : "Sin publicar · faltan fotos"}
                     </span>
                   )}
+                  {it.op_precio != null && it.estado === "disponible" && (
+                    <span className="text-[11px] font-bold rounded-full px-2.5 py-0.5 bg-[#FDEBEB] text-rojo-mc">
+                      🏷️ En Oportunidades · USD {Number(it.op_precio).toLocaleString("es-AR")}
+                      {it.op_aprobada === false ? " · en revisión" : ` · vence ${fechaCorta(it.op_vence)}`}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -271,6 +326,20 @@ export default function Stock() {
                       🔗 Copiar link
                     </button>
                   </>
+                )}
+                {it.estado === "disponible" && it.publicada && it.moto_id && puedePublicar && (
+                  it.op_precio != null ? (
+                    <button disabled={ocupado === it.id}
+                      onClick={() => accion(it, "quitar_oportunidad_stock")}
+                      className="text-[13px] font-bold text-gris disabled:opacity-50">
+                      Quitar de Oportunidades
+                    </button>
+                  ) : (
+                    <button onClick={() => abrirOportunidad(it)}
+                      className="text-[13px] font-bold text-rojo-mc">
+                      🏷️ Oportunidad
+                    </button>
+                  )
                 )}
                 {puedeEditar && it.estado === "disponible" && (
                   <button disabled={ocupado === it.id} onClick={() => accion(it, "senar_stock_item")}
@@ -307,6 +376,56 @@ export default function Stock() {
         reservada y se pausa sola en Motocambio. 💰 La venta se registra con canal y
         precio final, se haya vendido por donde sea.
       </p>
+
+      {/* Mini-ventana de Oportunidades */}
+      {opItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+          onClick={() => setOpItem(null)}>
+          <form onSubmit={confirmarOportunidad} onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-3.5">
+            <h2 className="font-titulos font-black text-xl tracking-tight">
+              🏷️ Publicar en Oportunidades
+            </h2>
+            <p className="text-sm text-gris -mt-2">
+              {opItem.marca} {opItem.modelo} {opItem.anio} — el sector de venta de
+              contado de Motocambio, con precios abajo de la referencia.
+            </p>
+            <p className="text-xs font-semibold text-tinta2 bg-fondo border border-linea rounded-xl px-3.5 py-2.5">
+              {!opRefCargada
+                ? "Buscando el precio de referencia…"
+                : opRef
+                ? `Referencia: USD ${Number(opRef.ref_min).toLocaleString("es-AR")} – ${Number(opRef.ref_max).toLocaleString("es-AR")}. Para entrar tiene que ser menor a USD ${Number(opRef.ref_min).toLocaleString("es-AR")}.`
+                : "Este modelo/año no tiene referencia todavía: Motocambio la revisa a mano antes de publicarla."}
+            </p>
+            <label className="text-sm font-semibold">
+              Precio de contado (USD)
+              <input inputMode="numeric" required value={opPrecio} onChange={(e) => setOpPrecio(e.target.value)}
+                className="mt-1 w-full border-2 border-linea rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-azul" />
+              {opItem.moneda === "ARS" && opItem.precio_contado != null && (
+                <span className="block text-xs text-gris font-normal mt-1">
+                  Sugerido con tu cotización, desde tu contado de {precio(opItem.precio_contado, "ARS")}.
+                </span>
+              )}
+            </label>
+            <label className="text-sm font-semibold">
+              Motivo (opcional)
+              <input value={opMotivo} onChange={(e) => setOpMotivo(e.target.value)} maxLength={120}
+                placeholder="Ej: liquidación de fin de mes"
+                className="mt-1 w-full border-2 border-linea rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-azul" />
+            </label>
+            <p className="text-xs text-gris">Dura 14 días. La podés quitar cuando quieras.</p>
+            <div className="flex gap-2">
+              <button className="flex-1 bg-rojo-mc hover:opacity-90 text-white font-titulos font-extrabold rounded-xl py-2.5">
+                Publicar
+              </button>
+              <button type="button" onClick={() => setOpItem(null)}
+                className="border-2 border-linea font-semibold rounded-xl px-4 text-tinta2">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Mini-ventana de venta */}
       {vendiendo && (

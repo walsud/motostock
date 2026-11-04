@@ -60,6 +60,9 @@ export interface ItemStock {
   actualizado_por_nombre: string | null;
   creado_el: string;
   fecha_ingreso: string;
+  op_precio: number | null;
+  op_vence: string | null;
+  op_aprobada: boolean | null;
 }
 
 // Días entre la fecha de ingreso y otra fecha (o hoy)
