@@ -43,16 +43,21 @@ export function Shell({
         </Link>
 
         {conc && (
-          <div className="mt-4 bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5">
+          <div className="mt-4 bg-white rounded-xl p-2.5" title={conc.nombre}>
             {conc.logo_url ? (
+              // El logo del concesionario, a todo el ancho de la tarjeta
+              // (los logos reales suelen ser apaisados).
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={conc.logo_url} alt="" className="w-8 h-8 rounded-lg object-contain" />
+              <img src={conc.logo_url} alt={conc.nombre}
+                className="w-full max-h-16 object-contain rounded-lg" />
             ) : (
-              <span className="text-xl">🏍️</span>
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">🏍️</span>
+                <span className="font-titulos font-extrabold text-[13px] leading-tight text-tinta">
+                  {conc.nombre}
+                </span>
+              </div>
             )}
-            <span className="font-titulos font-extrabold text-[13px] leading-tight text-tinta">
-              {conc.nombre}
-            </span>
           </div>
         )}
 
@@ -90,9 +95,16 @@ export function Shell({
         <header className="md:hidden bg-tinta text-white px-4 py-3 flex items-center gap-2 sticky top-0 z-20">
           <LogoMS tamano={30} />
           <WordmarkMS claro />
-          <span className="ml-auto text-[12px] text-[#9AA6B4] truncate max-w-[40%]">
-            {conc?.nombre || ""}
-          </span>
+          {conc?.logo_url ? (
+            <span className="ml-auto bg-white rounded-md px-1.5 py-0.5 max-w-[40%]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={conc.logo_url} alt={conc.nombre || ""} className="h-6 w-auto max-w-full object-contain" />
+            </span>
+          ) : (
+            <span className="ml-auto text-[12px] text-[#9AA6B4] truncate max-w-[40%]">
+              {conc?.nombre || ""}
+            </span>
+          )}
           <button onClick={salir} className="text-[12px] font-bold text-[#C3CCD7]">Salir</button>
         </header>
 

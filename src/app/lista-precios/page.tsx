@@ -40,7 +40,7 @@ export default function ListaPrecios() {
       <header className="flex items-center gap-4 border-b-2 border-tinta pb-4">
         {conc?.logo_url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={conc.logo_url} alt="" className="w-14 h-14 object-contain" />
+          <img src={conc.logo_url} alt="" className="h-20 w-auto max-w-[280px] object-contain" />
         )}
         <div>
           <h1 className="font-titulos font-black text-2xl tracking-tight">{conc?.nombre}</h1>
